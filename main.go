@@ -7,8 +7,10 @@ import (
 )
 
 type Test struct {
-	Text   string `default:"default text"`
-	Number int32  `default:"123"`
+	Text        string  `default:"default text"`
+	Number      int32   `default:"24"`
+	FloatNumber float32 `default:"12.12"`
+	Bool        bool    `default:"true"`
 }
 
 func main() {
@@ -18,17 +20,19 @@ func main() {
 }
 
 func TagDefault(in interface{}) {
-	valueType := reflect.TypeOf(in).Elem()
 	value := reflect.ValueOf(in).Elem()
+
 	parserData := mapperParserData()
-	for i := 0; i < valueType.NumField(); i++ {
-		field := valueType.Field(i)
+	for i := 0; i < value.NumField(); i++ {
+		field := value.Type().Field(i)
 		defaultTag := field.Tag.Get("default")
-		if defaultTag != "" {
-			fieldValue := value.FieldByName(field.Name)
-			if fieldValue.CanSet() {
-				parserData[fieldValue.Kind()](fieldValue, defaultTag)
-			}
+		if defaultTag == "" {
+			continue
+		}
+		fieldValue := value.Field(i)
+		if fieldValue.CanSet() {
+			parseDataFunc := parserData[fieldValue.Kind()]
+			parseDataFunc(fieldValue, defaultTag)
 		}
 	}
 }
